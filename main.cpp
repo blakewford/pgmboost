@@ -93,16 +93,20 @@ void applyFilter(pgm& image, const pgm& filter)
     }
 }
 
-void writeImage(const pgm& image)
+void writeImage(const pgm& image, const char* file)
 {
-    printf("%s %d %d %d\n", image.magic.c_str(), image.width, image.height, image.max);
+    std::ofstream stream;
+    stream.open(file);
+    stream << image.magic << " " << image.width << " " << image.height << " " << image.max << "\n";
 
     int32_t j = 0;
     int32_t i = (image.height*image.width);
     while(i--)
     {
-         printf("%d\n", (int32_t)image.image[j++]);
+         stream << (int32_t)image.image[j++] << "\n";
     }
+
+    stream.close();
 }
 
 void getFilterWindow(int32_t x, int32_t y, const pgm& image, const pgm& filter, pgm& window)
@@ -144,9 +148,23 @@ int32_t main(int32_t argc, char** argv)
     imageData.close();
 
     buildFilter(filter);
-    getFilterWindow(1, 0, image, filter, window);
-    applyFilter(window, filter);
-    writeImage(window);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    std::string name = "out";
+    while(y < image.height/filter.height)
+    {
+        while(x < image.width/filter.width)
+        {
+            getFilterWindow(x, y, image, filter, window);
+            std::string output = name + std::to_string(x) + std::to_string(y) + ".pgm";
+            applyFilter(window, filter);
+            writeImage(window, output.c_str());
+            x++;
+        }
+        x = 0;
+        y++;
+    }
 
     delete[] window.image;
     delete[] filter.image;
