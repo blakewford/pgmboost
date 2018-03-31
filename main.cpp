@@ -96,16 +96,42 @@ void applyFilter(pgm& image, const pgm& filter)
 void writeImage(const pgm& image)
 {
     printf("%s %d %d %d\n", image.magic.c_str(), image.width, image.height, image.max);
+
+    int32_t j = 0;
     int32_t i = (image.height*image.width);
     while(i--)
     {
-         printf("%d\n", (int32_t)image.image[i]);
+         printf("%d\n", (int32_t)image.image[j++]);
+    }
+}
+
+void getFilterWindow(int32_t x, int32_t y, const pgm& image, const pgm& filter, pgm& window)
+{
+    window.magic = image.magic;
+    window.width = filter.width;
+    window.height = filter.height;
+    window.max = filter.max;
+
+    window.image = new float[window.width*window.height];
+
+    int32_t i = 0;
+    int32_t X = x*filter.width;
+    int32_t Y = y*filter.height;
+    while(Y < (y+1)*filter.height)
+    {
+        while(X < (x+1)*filter.width)
+        {
+            int32_t value = getPixel(image, X++, Y);
+            window.image[i++] = value;
+        }
+        X = x*filter.width;
+        Y++;
     }
 }
 
 int32_t main(int32_t argc, char** argv)
 {
-    pgm filter, image;
+    pgm filter, image, window;
 
     std::ifstream filterData;    
     filterData.open("filter.pgm");
@@ -118,10 +144,11 @@ int32_t main(int32_t argc, char** argv)
     imageData.close();
 
     buildFilter(filter);
-    applyFilter(image, filter);
+    getFilterWindow(1, 0, image, filter, window);
+    applyFilter(window, filter);
+    writeImage(window);
 
-    writeImage(image);
-
+    delete[] window.image;
     delete[] filter.image;
     delete[] image.image;
 
