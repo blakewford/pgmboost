@@ -59,7 +59,13 @@ void buildFilter(pgm& image)
     }
 }
 
-void applyFilter(pgm& image)
+int32_t getPixel(const pgm& image, int32_t x, int32_t y)
+{
+    int32_t index = (y*image.width)+x;
+    return image.image[index];
+}
+
+void applyFilter(pgm& image, const pgm& filter)
 {
 //    printf("%s %d %d %d\n", image.magic.c_str(), image.width-2, image.height-2, image.max);
 
@@ -74,11 +80,26 @@ void applyFilter(pgm& image)
         while(width--)
         {
 //            printf("%d\n", (int32_t)image.image[i]);
+            int32_t value = getPixel(image, width+1, height);
+            value += getPixel(image, width-1, height);
+            value += getPixel(image, width, height+1);
+            value += getPixel(image, width, height-1);
+            image.image[width, height] = value*filter.image[width, height];
             i++;
             j++;
         }
         i = (image.width*++row) + 1;
         width = image.width-2;
+    }
+}
+
+void writeImage(const pgm& image)
+{
+    printf("%s %d %d %d\n", image.magic.c_str(), image.width, image.height, image.max);
+    int32_t i = (image.height*image.width);
+    while(i--)
+    {
+         printf("%d\n", (int32_t)image.image[i]);
     }
 }
 
@@ -97,7 +118,9 @@ int32_t main(int32_t argc, char** argv)
     imageData.close();
 
     buildFilter(filter);
-    applyFilter(image);
+    applyFilter(image, filter);
+
+    writeImage(image);
 
     delete[] filter.image;
     delete[] image.image;
