@@ -97,7 +97,7 @@ void writeImage(const pgm& image, const char* file)
 {
     std::ofstream stream;
     stream.open(file);
-    stream << image.magic << " " << image.width << " " << image.height << " " << image.max << "\n";
+    stream << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
 
     int32_t j = 0;
     int32_t i = (image.height*image.width);
@@ -157,9 +157,43 @@ int32_t main(int32_t argc, char** argv)
         while(x < image.width/filter.width)
         {
             getFilterWindow(x, y, image, filter, window);
-            std::string output = name + std::to_string(x) + std::to_string(y) + ".pgm";
+            std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
             applyFilter(window, filter);
             writeImage(window, output.c_str());
+            x++;
+        }
+        x = 0;
+        y++;
+    }
+
+    std::ofstream filteredImage;
+    filteredImage.open("filtered.pgm");
+    filteredImage << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
+
+    x = 0;
+    y = 0;
+    while(y < image.height/filter.height)
+    {
+        while(x < image.width/filter.width)
+        {
+            std::string output = name + std::to_string(x) + "_" + std::to_string(y) + ".pgm";
+            pgm clip;
+            std::ifstream clipData;
+            clipData.open(output.c_str());
+            readPgm(clipData, clip);
+            int32_t i = 0;
+            int32_t width = clip.width;
+            while(clip.height--)
+            {
+                while(width--)
+                {
+                    filteredImage << clip.image[i] << "\n";
+                    i++;
+                }
+                width = clip.width;
+            }
+            delete[] clip.image;
+            remove(output.c_str());
             x++;
         }
         x = 0;
