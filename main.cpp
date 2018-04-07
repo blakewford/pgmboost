@@ -117,18 +117,24 @@ void getFilterWindow(int32_t x, int32_t y, const pgm& image, const pgm& filter, 
     window.max = filter.max;
 
     window.image = new float[window.width*window.height];
+    int32_t count = window.width*window.height;
+    while(count--)
+    {
+        window.image[count] = 255;
+    }
 
     int32_t i = 0;
-    int32_t X = x*filter.width;
-    int32_t Y = y*filter.height;
-    while(Y < (y+1)*filter.height)
+    int32_t X = 0;
+    int32_t Y = 0;
+    while(Y < filter.height)
     {
-        while(X < (x+1)*filter.width)
+        while(X < filter.width)
         {
-            int32_t value = getPixel(image, X++, Y);
+            int32_t value = getPixel(image, x+X, y+Y);
             window.image[i++] = value;
+            X++;
         }
-        X = x*filter.width;
+        X = 0;
         Y++;
     }
 }
@@ -152,18 +158,18 @@ int32_t main(int32_t argc, char** argv)
     int32_t x = 0;
     int32_t y = 0;
     std::string name = "out";
-    while(y < image.height/filter.height)
+    while(y < image.height)
     {
-        while(x < image.width/filter.width)
+        while(x < image.width)
         {
             getFilterWindow(x, y, image, filter, window);
             std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
             applyFilter(window, filter);
             writeImage(window, output.c_str());
-            x++;
+            x+=filter.width;
         }
-        x = 0;
-        y++;
+        x=0;
+        y+=filter.height;
     }
 
     std::ofstream filteredImage;
@@ -172,9 +178,9 @@ int32_t main(int32_t argc, char** argv)
 
     x = 0;
     y = 0;
-    while(y < image.height/filter.height)
+    while(y < image.height)
     {
-        while(x < image.width/filter.width)
+        while(x < image.width)
         {
             std::string output = name + std::to_string(x) + "_" + std::to_string(y) + ".pgm";
             pgm clip;
@@ -187,17 +193,17 @@ int32_t main(int32_t argc, char** argv)
             {
                 while(width--)
                 {
-                    filteredImage << clip.image[i] << "\n";
+                    filteredImage << (clip.image[i] >= 128 ? 255:0) << "\n";
                     i++;
                 }
                 width = clip.width;
             }
             delete[] clip.image;
             remove(output.c_str());
-            x++;
+            x+=filter.width;
         }
-        x = 0;
-        y++;
+        x=0;
+        y+=filter.height;
     }
 
     delete[] window.image;
