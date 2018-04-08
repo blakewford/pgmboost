@@ -109,7 +109,7 @@ void applyFilter(pgm& image, const pgm& filter)
     delete[] oldImage;
 }
 
-void writeImage(const pgm& image, const char* file)
+void writeWindowImage(const pgm& image, const char* file)
 {
     std::ofstream stream;
     stream.open(file);
@@ -121,6 +121,23 @@ void writeImage(const pgm& image, const char* file)
     while(i--)
     {
          stream << ((image.image[j] > 128-diff) && (image.image[j] < 128+diff) ? image.image[j]: 255) << "\n";
+         j++;
+    }
+
+    stream.close();
+}
+
+void writeImage(const pgm& image, const char* file)
+{
+    std::ofstream stream;
+    stream.open(file);
+    stream << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
+
+    int32_t j = 0;
+    int32_t i = (image.height*image.width);
+    while(i--)
+    {
+         stream << image.image[j] << "\n";
          j++;
     }
 
@@ -171,7 +188,7 @@ void applyWholeImageFilter(const pgm& image, const pgm& filter)
             getFilterWindow(x, y, image, filter, window);
             std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
             applyFilter(window, filter);
-            writeImage(window, output.c_str());
+            writeWindowImage(window, output.c_str());
             x+=filter.width;
         }
         x=0;
@@ -226,28 +243,201 @@ void reconstructImage(const pgm& image, const pgm& filter)
     filtered.close();
 }
 
+void startBuildingFilter(int32_t width, int32_t height, pgm& filter)
+{
+    filter.magic = "P2";
+    filter.width = width;
+    filter.height = height;
+    filter.max = 255;
+    filter.image = new float[width*height];
+}
+
+void buildLeftRightFilter(int32_t width, int32_t height, pgm& filter, bool inverse)
+{
+    startBuildingFilter(width, height, filter);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    while(y < filter.height)
+    {
+        while(x < filter.width)
+        {
+            if(x < filter.width/2)
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            else
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+}
+
+void buildUpDownFilter(int32_t width, int32_t height, pgm& filter, bool inverse)
+{
+    startBuildingFilter(width, height, filter);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    while(y < filter.height)
+    {
+        while(x < filter.width)
+        {
+            if(y < filter.height/2)
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            else
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+}
+
+void buildLeftRight3BarFilter(int32_t width, int32_t height, pgm& filter, bool inverse)
+{
+    startBuildingFilter(width, height, filter);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    while(y < filter.height)
+    {
+        while(x < filter.width)
+        {
+            if(x < filter.width/3)
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            else if(x < (filter.width/3)*2)
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            else
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+}
+
+void buildUpDown3BarFilter(int32_t width, int32_t height, pgm& filter, bool inverse)
+{
+    startBuildingFilter(width, height, filter);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    while(y < filter.height)
+    {
+        while(x < filter.width)
+        {
+            if(y < filter.height/3)
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            else if(y < (filter.height/3)*2)
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            else
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+}
+
+void buildCheckerFilter(int32_t width, int32_t height, pgm& filter, bool inverse)
+{
+    startBuildingFilter(width, height, filter);
+
+    int32_t x = 0;
+    int32_t y = 0;
+    while(y < filter.height)
+    {
+        while(x < filter.width)
+        {
+            if(x < filter.width/2 && y < filter.height/2)
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            else if(x >= filter.width/2 && y < filter.height/2)
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            else if(x < filter.width/2 && y >= filter.height/2)
+            {
+                setPixel(filter, x, y, inverse ? 0.0f: 255.0f);
+            }
+            else
+            {
+                setPixel(filter, x, y, inverse ? 255.0f: 0.0f);
+            }
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+}
+
 int32_t main(int32_t argc, char** argv)
 {
-    pgm filter, image, window;
-
-    std::ifstream filterData;
-    filterData.open("filter.pgm");
-    readPgm(filterData, filter);
-    filterData.close();
+    pgm filter, image;
 
     std::ifstream imageData;
     imageData.open("clip.pgm");
     readPgm(imageData, image);
     imageData.close();
 
-    buildFilter(filter);
+    const int32_t nFactors=7;
+    int32_t factors[nFactors] = {2,4,5,10,20,25,50};
 
-    applyWholeImageFilter(image, filter);
-    reconstructImage(image, filter);
+    int32_t k=2;
+    bool inverse=false;
+    while(k--)
+    {
+        int32_t i=nFactors;
+        int32_t j=nFactors;
+//        while(i--)
+        {
+            while(j--)
+            {
+                buildLeftRightFilter(factors[j], factors[j], filter, inverse);
+//                buildUpDownFilter(factors[j], factors[i], filter, inverse);
+//                buildLeftRight3BarFilter(factors[j], factors[i], filter, inverse);
+//                buildUpDown3BarFilter(factors[j], factors[i], filter, inverse);
+//                buildCheckerFilter(factors[j], factors[i], filter, inverse);
 
-    delete[] window.image;
-    delete[] filter.image;
+                buildFilter(filter);
+
+                applyWholeImageFilter(image, filter);
+                reconstructImage(image, filter);
+
+                delete[] filter.image;
+                inverse=true;
+            }
+            j=nFactors;
+        }
+    }
+
     delete[] image.image;
-
     return 0;
 }
