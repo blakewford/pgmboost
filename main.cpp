@@ -62,10 +62,27 @@ int32_t getPixel(const pgm& image, int32_t x, int32_t y)
     return image.image[index];
 }
 
+float getFloatPixel(const pgm& image, int32_t x, int32_t y)
+{
+    int32_t index = (y*image.width)+x;
+    return image.image[index];
+}
+
+void setPixel(const pgm& image, int32_t x, int32_t y, float value)
+{
+    int32_t index = (y*image.width)+x;
+    image.image[index] = value;
+}
+
 void applyFilter(pgm& image, const pgm& filter)
 {
     int32_t width = image.width-2;
     int32_t height = image.height-2;
+
+    pgm buffer;
+    buffer.width = image.width;
+    buffer.height = image.height;
+    buffer.image = new float[image.width*image.height];
 
     int32_t j = 0;
     int32_t row = 0;
@@ -78,14 +95,18 @@ void applyFilter(pgm& image, const pgm& filter)
             value += getPixel(image, width-1, height);
             value += getPixel(image, width, height+1);
             value += getPixel(image, width, height-1);
-            value = (value*filter.image[width, height] >= 128) ? 255: 0;
-            image.image[width, height] = value;
+            float mask = getFloatPixel(filter, width, height);
+            setPixel(buffer, width, height, (value*mask) >= 128 ? 255: 127);
             i++;
             j++;
         }
         i = (image.width*++row) + 1;
         width = image.width-2;
     }
+
+    float* oldImage = image.image;
+    image.image = buffer.image;
+    delete[] oldImage;
 }
 
 void writeImage(const pgm& image, const char* file)
@@ -98,7 +119,9 @@ void writeImage(const pgm& image, const char* file)
     int32_t i = (image.height*image.width);
     while(i--)
     {
-         stream << (int32_t)image.image[j++] << "\n";
+         image.image[0] = 255;
+         image.image[1] = 255;
+         stream << (image.image[j++] == 127 ? 127: 255) << "\n";
     }
 
     stream.close();
@@ -172,7 +195,7 @@ void reconstructImage(const pgm& image, const pgm& filter)
             command.append(output + " ");
             x+=filter.width;
         }
-        command.append("+append " + file);
+        command.append("-border 0 +append " + file);
         system(command.c_str());
         i++;
         x=0;
@@ -188,7 +211,7 @@ void reconstructImage(const pgm& image, const pgm& filter)
         std::string file = "temp" + std::to_string(j) + ".pgm ";
         command.append(file);
     }
-    command.append(" -append filtered.pgm");
+    command.append(" -border 0 -append filtered.pgm");
     system(command.c_str());
     system("rm temp*.pgm");
 }
