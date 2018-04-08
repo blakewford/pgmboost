@@ -1,5 +1,5 @@
 adaboost: main.cpp
-	g++ -g $< -o $@
+	g++ -Ofast -m64 -funroll-loops $< -o $@
 
 clean:
 	-@rm adaboost

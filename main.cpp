@@ -96,7 +96,7 @@ void applyFilter(pgm& image, const pgm& filter)
             value += getPixel(image, width, height+1);
             value += getPixel(image, width, height-1);
             float mask = getFloatPixel(filter, width, height);
-            setPixel(buffer, width, height, (value*mask) >= 128 ? 255: 127);
+            setPixel(buffer, width, height, (value*mask) >= 255 ? 255: (value*mask));
             i++;
             j++;
         }
@@ -116,12 +116,12 @@ void writeImage(const pgm& image, const char* file)
     stream << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
 
     int32_t j = 0;
+    const int32_t diff = 16;
     int32_t i = (image.height*image.width);
     while(i--)
     {
-         image.image[0] = 255;
-         image.image[1] = 255;
-         stream << (image.image[j++] == 127 ? 127: 255) << "\n";
+         stream << ((image.image[j] > 128-diff) && (image.image[j] < 128+diff) ? image.image[j]: 255) << "\n";
+         j++;
     }
 
     stream.close();
