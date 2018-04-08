@@ -23,7 +23,6 @@ void readPgm(std::ifstream& stream, pgm& image)
     int32_t pixel;
     int32_t width = image.width;
     int32_t height = image.height;
-//    printf("%s %d %d %d\n", image.magic.c_str(), image.width, image.height, image.max);
     image.image = new float[image.width*image.height];
 
     int32_t i = 0;
@@ -33,7 +32,6 @@ void readPgm(std::ifstream& stream, pgm& image)
         {
             stream >> pixel;
             image.image[i] = pixel;
-//            printf("%.2f\n", image.image[i]);
             i++;
         }
         width = image.width;
@@ -52,7 +50,6 @@ void buildFilter(pgm& image)
         while(width--)
         {
             image.image[i] /= elements;
-//            printf("%.2f\n", image.image[i]);
             i++;
         }
         width = image.width;
@@ -67,8 +64,6 @@ int32_t getPixel(const pgm& image, int32_t x, int32_t y)
 
 void applyFilter(pgm& image, const pgm& filter)
 {
-//    printf("%s %d %d %d\n", image.magic.c_str(), image.width-2, image.height-2, image.max);
-
     int32_t width = image.width-2;
     int32_t height = image.height-2;
 
@@ -79,12 +74,12 @@ void applyFilter(pgm& image, const pgm& filter)
     {
         while(width--)
         {
-//            printf("%d\n", (int32_t)image.image[i]);
             int32_t value = getPixel(image, width+1, height);
             value += getPixel(image, width-1, height);
             value += getPixel(image, width, height+1);
             value += getPixel(image, width, height-1);
-            image.image[width, height] = value*filter.image[width, height];
+            value = (value*filter.image[width, height] >= 128) ? 255: 0;
+            image.image[width, height] = value;
             i++;
             j++;
         }
@@ -139,21 +134,9 @@ void getFilterWindow(int32_t x, int32_t y, const pgm& image, const pgm& filter, 
     }
 }
 
-int32_t main(int32_t argc, char** argv)
+void applyWholeImageFilter(const pgm& image, const pgm& filter)
 {
-    pgm filter, image, window;
-
-    std::ifstream filterData;    
-    filterData.open("filter.pgm");
-    readPgm(filterData, filter);
-    filterData.close();
-
-    std::ifstream imageData;    
-    imageData.open("clip.pgm");
-    readPgm(imageData, image);
-    imageData.close();
-
-    buildFilter(filter);
+    pgm window;
 
     int32_t x = 0;
     int32_t y = 0;
@@ -171,40 +154,63 @@ int32_t main(int32_t argc, char** argv)
         x=0;
         y+=filter.height;
     }
+}
 
-    std::ofstream filteredImage;
-    filteredImage.open("filtered.pgm");
-    filteredImage << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
-
-    x = 0;
-    y = 0;
+void reconstructImage(const pgm& image, const pgm& filter)
+{
+    int32_t i=0;
+    int32_t x = 0;
+    int32_t y = 0;
+    std::string name = "out";
     while(y < image.height)
     {
+        std::string file = "temp" + std::to_string(i) + ".pgm";
+        std::string command = "convert ";
         while(x < image.width)
         {
             std::string output = name + std::to_string(x) + "_" + std::to_string(y) + ".pgm";
-            pgm clip;
-            std::ifstream clipData;
-            clipData.open(output.c_str());
-            readPgm(clipData, clip);
-            int32_t i = 0;
-            int32_t width = clip.width;
-            while(clip.height--)
-            {
-                while(width--)
-                {
-                    filteredImage << (clip.image[i] >= 128 ? 255:0) << "\n";
-                    i++;
-                }
-                width = clip.width;
-            }
-            delete[] clip.image;
-            remove(output.c_str());
+            command.append(output + " ");
             x+=filter.width;
         }
+        command.append("+append " + file);
+        system(command.c_str());
+        i++;
         x=0;
         y+=filter.height;
     }
+
+    system("rm out*.pgm");
+    system("cp temp0.pgm filtered.pgm");
+
+    std::string command = "convert filtered.pgm ";
+    for(int j = 1; j < i; j++)
+    {
+        std::string file = "temp" + std::to_string(j) + ".pgm ";
+        command.append(file);
+    }
+    command.append(" -append filtered.pgm");
+    system(command.c_str());
+    system("rm temp*.pgm");
+}
+
+int32_t main(int32_t argc, char** argv)
+{
+    pgm filter, image, window;
+
+    std::ifstream filterData;
+    filterData.open("filter.pgm");
+    readPgm(filterData, filter);
+    filterData.close();
+
+    std::ifstream imageData;
+    imageData.open("clip.pgm");
+    readPgm(imageData, image);
+    imageData.close();
+
+    buildFilter(filter);
+
+    applyWholeImageFilter(image, filter);
+    reconstructImage(image, filter);
 
     delete[] window.image;
     delete[] filter.image;
