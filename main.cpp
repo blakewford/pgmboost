@@ -195,7 +195,7 @@ void reconstructImage(const pgm& image, const pgm& filter)
             command.append(output + " ");
             x+=filter.width;
         }
-        command.append("-border 0 +append " + file);
+        command.append("-compress none +append " + file);
         system(command.c_str());
         i++;
         x=0;
@@ -203,17 +203,27 @@ void reconstructImage(const pgm& image, const pgm& filter)
     }
 
     system("rm out*.pgm");
-    system("cp temp0.pgm filtered.pgm");
 
-    std::string command = "convert filtered.pgm ";
-    for(int j = 1; j < i; j++)
+    std::ofstream filtered;
+
+    filtered.open("filtered.pgm");
+    filtered << image.magic << "\n" << image.width << " " << image.height << "\n" << image.max << "\n";
+    for(int j = 0; j < i; j++)
     {
-        std::string file = "temp" + std::to_string(j) + ".pgm ";
-        command.append(file);
+        pgm layer;
+        std::ifstream temp;
+        std::string file = "temp" + std::to_string(j) + ".pgm";
+        temp.open(file.c_str());
+        readPgm(temp, layer);
+        int32_t count = layer.width*layer.height;
+        for(int i=0; i < count; i++)
+        {
+            filtered << layer.image[i] << "\n";
+        }
     }
-    command.append(" -border 0 -append filtered.pgm");
-    system(command.c_str());
+
     system("rm temp*.pgm");
+    filtered.close();
 }
 
 int32_t main(int32_t argc, char** argv)
