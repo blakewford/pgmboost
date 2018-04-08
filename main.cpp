@@ -6,6 +6,7 @@
  *
  */
 
+#include <unistd.h>
 #include <stdint.h>
 #include <fstream>
 
@@ -44,7 +45,7 @@ void buildFilter(pgm& image)
     int32_t height = image.height;
     float elements = image.width*image.height;
 
-    int32_t i;
+    int32_t i = 0;
     while(height--)
     {
         while(width--)
@@ -398,15 +399,8 @@ void buildCheckerFilter(int32_t width, int32_t height, pgm& filter, bool inverse
 
 }
 
-int32_t main(int32_t argc, char** argv)
+void test(const pgm& image, pgm& filter)
 {
-    pgm filter, image;
-
-    std::ifstream imageData;
-    imageData.open("clip.pgm");
-    readPgm(imageData, image);
-    imageData.close();
-
     const int32_t nFactors=7;
     int32_t factors[nFactors] = {2,4,5,10,20,25,50};
 
@@ -416,27 +410,52 @@ int32_t main(int32_t argc, char** argv)
     {
         int32_t i=nFactors;
         int32_t j=nFactors;
-//        while(i--)
+        while(i--)
         {
             while(j--)
             {
-                buildLeftRightFilter(factors[j], factors[j], filter, inverse);
+//                buildLeftRightFilter(factors[j], factors[j], filter, inverse);
 //                buildUpDownFilter(factors[j], factors[i], filter, inverse);
 //                buildLeftRight3BarFilter(factors[j], factors[i], filter, inverse);
 //                buildUpDown3BarFilter(factors[j], factors[i], filter, inverse);
 //                buildCheckerFilter(factors[j], factors[i], filter, inverse);
 
                 buildFilter(filter);
-
                 applyWholeImageFilter(image, filter);
                 reconstructImage(image, filter);
 
+                usleep(1000*1000*5);
                 delete[] filter.image;
-                inverse=true;
-            }
+            }            
             j=nFactors;
         }
+        inverse=true;        
     }
+}
+
+void production(const pgm& image, pgm& filter)
+{
+    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
+
+    buildFilter(filter);
+    applyWholeImageFilter(image, filter);
+    reconstructImage(image, filter);   
+}
+
+int32_t main(int32_t argc, char** argv)
+{
+    pgm filter, image;
+
+    std::ifstream imageData;
+    imageData.open("clip.pgm");
+    readPgm(imageData, image);
+    imageData.close();
+
+#if 0
+    test(image, filter);
+#else
+    production(image, filter); 
+#endif
 
     delete[] image.image;
     return 0;
