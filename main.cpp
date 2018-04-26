@@ -439,8 +439,8 @@ void production(const pgm& image, pgm& filter)
 //    buildLeftRightFilter(10, 50, filter, false);
 //    buildUpDownFilter(50, 5, filter, true);
 //    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
-//    buildUpDown3BarFilter(50, 5, filter, true);
-    buildCheckerFilter(10, 50, filter, false);
+    buildUpDown3BarFilter(50, 5, filter, true);
+//    buildCheckerFilter(10, 50, filter, false);
 
     buildFilter(filter);
     applyWholeImageFilter(image, filter);
@@ -502,7 +502,9 @@ int32_t main(int32_t argc, char** argv)
     }
 
     float score = accumulator/(filtered.width*filtered.height);
-    if(score > 1.0f && score < 10.0f)
+//    printf("%.2f\n", score);
+//    if(score > 1.0f && score < 8.0f) //buildUpDown3BarFilter
+    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
     {
         printf("1\n");
     }
