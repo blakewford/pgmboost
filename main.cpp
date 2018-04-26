@@ -414,7 +414,7 @@ void test(const pgm& image, pgm& filter)
         {
             while(j--)
             {
-//                buildLeftRightFilter(factors[j], factors[j], filter, inverse);
+//                buildLeftRightFilter(factors[j], factors[i], filter, inverse);
 //                buildUpDownFilter(factors[j], factors[i], filter, inverse);
 //                buildLeftRight3BarFilter(factors[j], factors[i], filter, inverse);
 //                buildUpDown3BarFilter(factors[j], factors[i], filter, inverse);
@@ -435,7 +435,11 @@ void test(const pgm& image, pgm& filter)
 
 void production(const pgm& image, pgm& filter)
 {
-    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
+//    buildLeftRightFilter(10, 50, filter, false);
+//    buildUpDownFilter(50, 5, filter, true);   
+//    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
+//    buildUpDown3BarFilter(50, 5, filter, true);
+    buildCheckerFilter(10, 50, filter, false);
 
     buildFilter(filter);
     applyWholeImageFilter(image, filter);
