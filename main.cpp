@@ -6,6 +6,7 @@
  *
  */
 
+#include <string.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <fstream>
@@ -436,18 +437,34 @@ void test(const pgm& image, pgm& filter)
 void production(const pgm& image, pgm& filter)
 {
 //    buildLeftRightFilter(10, 50, filter, false);
-//    buildUpDownFilter(50, 5, filter, true);   
+//    buildUpDownFilter(50, 5, filter, true);
 //    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
 //    buildUpDown3BarFilter(50, 5, filter, true);
     buildCheckerFilter(10, 50, filter, false);
 
     buildFilter(filter);
     applyWholeImageFilter(image, filter);
-    reconstructImage(image, filter);   
+    reconstructImage(image, filter);
+}
+
+void convertImage(const char* path)
+{
+    char buffer[256];
+    memset(buffer, '\0', 256);
+    sprintf(buffer, "convert -compress none %s clip.pgm", path);
+    system(buffer);
 }
 
 int32_t main(int32_t argc, char** argv)
 {
+    if(argc != 2)
+    {
+        printf("usage: adaboost <image>\n");
+        return -1;
+    }
+
+    convertImage(argv[1]);
+
     pgm filter, image;
 
     std::ifstream imageData;
@@ -460,6 +477,35 @@ int32_t main(int32_t argc, char** argv)
 #else
     production(image, filter); 
 #endif
+
+    pgm filtered;
+    std::ifstream filteredData;
+    filteredData.open("filtered.pgm");
+    readPgm(filteredData, filtered);
+    filteredData.close();
+
+    int32_t width = filtered.width;
+    int32_t height = filtered.height;
+    image.image = new float[width*height];
+
+    int32_t i = 0;
+    float accumulator = 0;
+    while(height--)
+    {
+        while(width--)
+        {
+            if(filtered.image[i] != 255.0f)
+                accumulator += filtered.image[i];
+            i++;
+        }
+        width = image.width;
+    }
+
+    float score = accumulator/(filtered.width*filtered.height);
+    if(score > 1.0f && score < 10.0f)
+    {
+        printf("1\n");
+    }
 
     delete[] image.image;
     return 0;
