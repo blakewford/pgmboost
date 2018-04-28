@@ -453,21 +453,50 @@ void getProductionFilterDimensions(filterType type, int32_t& width, int32_t& hei
             width = 10;
             height = 50;
             break;
-        default:
-            width = 0;
-            height = 0;
+        case UpDown:
+            width = 50;
+            height = 5;
             break;
+        case LeftRight3Bar:
+            width = 10;
+            height = 50;
+            break;
+        case UpDown3Bar:
+            width = 50;
+            height = 5;
+            break;
+        case Checker:
+            width = 10;
+            height = 50;
+            break;
+        default:
+            exit(-1);
     }
 }
 
-void production(const pgm& image, pgm& filter)
+void production(filterType type, const pgm& image, pgm& filter)
 {
     //AddHardCodedValueToReport
-    buildLeftRightFilter(10, 50, filter, false);
-//    buildUpDownFilter(50, 5, filter, true);
-//    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
-//    buildUpDown3BarFilter(50, 5, filter, true);
-//    buildCheckerFilter(10, 50, filter, false);
+    switch(type)
+    {
+        case LeftRight:
+            buildLeftRightFilter(10, 50, filter, false);
+            break;
+        case UpDown:
+            buildUpDownFilter(50, 5, filter, true);
+            break;
+        case LeftRight3Bar:
+            buildLeftRight3BarFilter(10, 50, filter, false);
+            break;
+        case UpDown3Bar:
+            buildUpDown3BarFilter(50, 5, filter, true);
+            break;
+        case Checker:
+            buildCheckerFilter(10, 50, filter, false);
+            break;
+        default:
+            exit(-1);
+    }
 
     buildFilter(filter);
     applyWholeImageFilter(image, filter);
@@ -491,7 +520,7 @@ void trainingPass(float score)
     printf("1\n");
 }
 
-void faceTest(const pgm& image)
+void faceTest(filterType type, const pgm& image)
 {
     pgm window;
     //AddHardCodedValueToReport
@@ -527,14 +556,34 @@ void faceTest(const pgm& image)
 
             float score = accumulator/(window.width*window.height);
             trainingPass(score);
+
+            bool detected = false;
+            const float low = 1.0f;
             //AddHardCodedValueToReport
-            if(score > 1.0f && score < 12.0f) //buildLeftRightFilter
-      //    if(score > 1.0f && score < 8.0f)  //buildUpDownFilter
-      //    if(score > 1.0f && score < 12.0f) //buildLeftRight3BarFilter
-      //    if(score > 1.0f && score < 8.0f)  //buildUpDown3BarFilter
-      //    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
+            switch(type)
             {
-                printf("Face detected\n");
+                case LeftRight:
+                    detected = (score > low && score < 12.0f);
+                    break;
+                case UpDown:
+                    detected = (score > low && score < 8.0f);
+                    break;
+                case LeftRight3Bar:
+                    detected = (score > low && score < 12.0f);
+                    break;
+                case UpDown3Bar:
+                    detected = (score > low && score < 8.0f);
+                    break;
+                case Checker:
+                    detected = (score > low && score < 10.0f);
+                    break;
+                default:
+                    exit(-1);
+            }
+
+            if(detected)
+            {
+      //          printf("Face detected\n");
             }
 
             delete[] window.image;
@@ -547,6 +596,8 @@ void faceTest(const pgm& image)
 
 int32_t main(int32_t argc, char** argv)
 {
+    filterType type = LeftRight;
+
     if(argc != 2)
     {
         printf("usage: adaboost <image>\n");
@@ -563,14 +614,14 @@ int32_t main(int32_t argc, char** argv)
     imageData.close();
 
     int32_t width, height;
-    getProductionFilterDimensions(LeftRight, width, height);
+    getProductionFilterDimensions(type, width, height);
     image.width  -= image.width%width;
     image.height -= image.height%height;
 
 #if 0
     test(image, filter);
 #else
-    production(image, filter); 
+    production(type, image, filter);
 #endif
 
     pgm filtered;
@@ -579,7 +630,7 @@ int32_t main(int32_t argc, char** argv)
     readPgm(filteredData, filtered);
     filteredData.close();
 
-    faceTest(filtered);
+    faceTest(type, filtered);
 
     return 0;
 }
