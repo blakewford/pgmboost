@@ -122,6 +122,7 @@ void writeWindowImage(const pgm& image, const char* file)
     int32_t i = (image.height*image.width);
     while(i--)
     {
+         //AddHardCodedValueToReport
          stream << ((image.image[j] > 128-diff) && (image.image[j] < 128+diff) ? image.image[j]: 255) << "\n";
          j++;
     }
@@ -403,6 +404,7 @@ void buildCheckerFilter(int32_t width, int32_t height, pgm& filter, bool inverse
 void test(const pgm& image, pgm& filter)
 {
     const int32_t nFactors=7;
+    //AddHardCodedValueToReport
     int32_t factors[nFactors] = {2,4,5,10,20,25,50};
 
     int32_t k=2;
@@ -436,10 +438,11 @@ void test(const pgm& image, pgm& filter)
 
 void production(const pgm& image, pgm& filter)
 {
-//    buildLeftRightFilter(10, 50, filter, false);
+    //AddHardCodedValueToReport
+    buildLeftRightFilter(10, 50, filter, false);
 //    buildUpDownFilter(50, 5, filter, true);
 //    buildLeftRight3BarFilter(10, 50, filter, false); // <-- Current leader in filtering
-    buildUpDown3BarFilter(50, 5, filter, true);
+//    buildUpDown3BarFilter(50, 5, filter, true);
 //    buildCheckerFilter(10, 50, filter, false);
 
     buildFilter(filter);
@@ -453,6 +456,20 @@ void convertImage(const char* path)
     memset(buffer, '\0', 256);
     sprintf(buffer, "convert -compress none %s clip.pgm", path);
     system(buffer);
+}
+
+void trainingPass1(float score)
+{
+    //Range
+    //AddHardCodedValueToReport
+    printf("%.2f\n", score);
+}
+
+void trainingPass2(float score)
+{
+    //Accuracy
+    //AddHardCodedValueToReport
+    printf("1\n");
 }
 
 int32_t main(int32_t argc, char** argv)
@@ -502,11 +519,14 @@ int32_t main(int32_t argc, char** argv)
     }
 
     float score = accumulator/(filtered.width*filtered.height);
-//    printf("%.2f\n", score);
-//    if(score > 1.0f && score < 8.0f) //buildUpDown3BarFilter
-    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
+    //AddHardCodedValueToReport
+    if(score > 1.0f && score < 12.0f) //buildLeftRightFilter
+//    if(score > 1.0f && score < 8.0f)  //buildUpDownFilter
+//    if(score > 1.0f && score < 12.0f) //buildLeftRight3BarFilter
+//    if(score > 1.0f && score < 8.0f)  //buildUpDown3BarFilter
+//    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
     {
-        printf("1\n");
+        printf("Face detected\n");
     }
 
     delete[] image.image;
