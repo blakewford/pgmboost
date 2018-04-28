@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <fstream>
 
+enum filterType
+{
+    LeftRight,
+    UpDown,
+    LeftRight3Bar,
+    UpDown3Bar,
+    Checker
+};
+
 struct pgm
 {
     std::string magic;
@@ -436,6 +445,21 @@ void test(const pgm& image, pgm& filter)
     }
 }
 
+void getProductionFilterDimensions(filterType type, int32_t& width, int32_t& height)
+{
+    switch(type)
+    {
+        case LeftRight:
+            width = 10;
+            height = 50;
+            break;
+        default:
+            width = 0;
+            height = 0;
+            break;
+    }
+}
+
 void production(const pgm& image, pgm& filter)
 {
     //AddHardCodedValueToReport
@@ -484,6 +508,11 @@ int32_t main(int32_t argc, char** argv)
     readPgm(imageData, image);
     imageData.close();
 
+    int32_t width, height;
+    getProductionFilterDimensions(LeftRight, width, height);
+    image.width  -= image.width%width;
+    image.height -= image.height%height;
+
 #if 0
     test(image, filter);
 #else
@@ -496,6 +525,7 @@ int32_t main(int32_t argc, char** argv)
     readPgm(filteredData, filtered);
     filteredData.close();
 
+/*
     int32_t width = filtered.width;
     int32_t height = filtered.height;
     image.image = new float[width*height];
@@ -525,5 +555,7 @@ int32_t main(int32_t argc, char** argv)
     }
 
     delete[] image.image;
+*/
+
     return 0;
 }
