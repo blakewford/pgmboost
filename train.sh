@@ -1,8 +1,9 @@
 #!/bin/bash
-for filename in ~/Desktop/training_test_data/training_faces/*; do
-    if [ "$filename" != "/home/blakewford/Desktop/training_test_data/training_faces/Thumbs.db" ]; then
-        ./adaboost "$filename" >> output.txt
+path="/home/blakewford/Desktop/training_test_data/training_faces/"
+for filename in `ls $path`; do
+    if [ "$filename" != "Thumbs.db" ]; then
+        ./adaboost "$path$filename" >> output.txt
     fi
 done
-paste -s -d+ output.txt | bc
-rm output.txt
+#paste -s -d+ output.txt | bc
+#rm output.txt

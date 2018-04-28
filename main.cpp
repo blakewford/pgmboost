@@ -458,17 +458,12 @@ void convertImage(const char* path)
     system(buffer);
 }
 
-void trainingPass1(float score)
+void trainingPass(float score)
 {
+    //AddHardCodedValueToReport
     //Range
-    //AddHardCodedValueToReport
-    printf("%.2f\n", score);
-}
-
-void trainingPass2(float score)
-{
+    printf("%.2f ", score);
     //Accuracy
-    //AddHardCodedValueToReport
     printf("1\n");
 }
 
