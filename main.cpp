@@ -491,6 +491,60 @@ void trainingPass(float score)
     printf("1\n");
 }
 
+void faceTest(const pgm& image)
+{
+    pgm window;
+    //AddHardCodedValueToReport
+    window.width = 100;
+    window.height = 100;
+    window.max = 255;
+
+    int32_t x = 0;
+    int32_t y = 0;
+    std::string name = "sample";
+    while(y < image.height)
+    {
+        while(x < image.width)
+        {
+            getFilterWindow(x, y, image, window, window);
+            std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
+//            writeWindowImage(window, output.c_str());
+
+            int32_t width = window.width;
+            int32_t height = window.height;
+            int32_t i = 0;
+            float accumulator = 0;
+            while(height--)
+            {
+                while(width--)
+                {
+                    if(window.image[i] != 255.0f)
+                        accumulator += window.image[i];
+                    i++;
+                }
+                width = window.width;
+            }
+
+            float score = accumulator/(window.width*window.height);
+            trainingPass(score);
+            //AddHardCodedValueToReport
+            if(score > 1.0f && score < 12.0f) //buildLeftRightFilter
+      //    if(score > 1.0f && score < 8.0f)  //buildUpDownFilter
+      //    if(score > 1.0f && score < 12.0f) //buildLeftRight3BarFilter
+      //    if(score > 1.0f && score < 8.0f)  //buildUpDown3BarFilter
+      //    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
+            {
+                printf("Face detected\n");
+            }
+
+            delete[] window.image;
+            x+=window.width;
+        }
+        x=0;
+        y+=window.height;
+    }
+}
+
 int32_t main(int32_t argc, char** argv)
 {
     if(argc != 2)
@@ -525,37 +579,7 @@ int32_t main(int32_t argc, char** argv)
     readPgm(filteredData, filtered);
     filteredData.close();
 
-/*
-    int32_t width = filtered.width;
-    int32_t height = filtered.height;
-    image.image = new float[width*height];
-
-    int32_t i = 0;
-    float accumulator = 0;
-    while(height--)
-    {
-        while(width--)
-        {
-            if(filtered.image[i] != 255.0f)
-                accumulator += filtered.image[i];
-            i++;
-        }
-        width = image.width;
-    }
-
-    float score = accumulator/(filtered.width*filtered.height);
-    //AddHardCodedValueToReport
-    if(score > 1.0f && score < 12.0f) //buildLeftRightFilter
-//    if(score > 1.0f && score < 8.0f)  //buildUpDownFilter
-//    if(score > 1.0f && score < 12.0f) //buildLeftRight3BarFilter
-//    if(score > 1.0f && score < 8.0f)  //buildUpDown3BarFilter
-//    if(score > 1.0f && score < 10.0f) //buildCheckerFilter
-    {
-        printf("Face detected\n");
-    }
-
-    delete[] image.image;
-*/
+    faceTest(filtered);
 
     return 0;
 }
