@@ -511,13 +511,14 @@ void convertImage(const char* path)
     system(buffer);
 }
 
-void trainingPass(float score)
+void trainingPass(bool detected, float score)
 {
     //AddHardCodedValueToReport
     //Range
-    printf("%.2f ", score);
+    //printf("%.2f\n", score);
     //Accuracy
-    printf("1\n");
+    if(detected && score > 5.0f && score < 15.0f)
+        printf("1\n");
 }
 
 void faceTest(filterType type, const pgm& image)
@@ -542,20 +543,43 @@ void faceTest(filterType type, const pgm& image)
             int32_t width = window.width;
             int32_t height = window.height;
             int32_t i = 0;
-            float accumulator = 0;
+            int32_t score2 = 0;
+            int32_t accumulator = 0;
+            int32_t accumulator2 = 0;
             while(height--)
             {
                 while(width--)
                 {
-                    if(window.image[i] != 255.0f)
-                        accumulator += window.image[i];
+                   if(window.image[i] != 255.0f)
+                       accumulator += window.image[i];
+                    accumulator2 += window.image[i];
                     i++;
                 }
+                if((height > 85) && (accumulator2 == 25500))
+                {
+                    score2++;
+                }
+                if((height < 85 && height > 80) && (accumulator2 > 24500 && accumulator2 < 25500))
+                {
+                    score2++;
+                }
+                if((height < 65 && height > 60) && (accumulator2 > 23000 && accumulator2 < 25000))
+                {
+                    score2++;
+                }
+                if((height < 45 && height > 40) && (accumulator2 < 25000))
+                {
+                    score2++;
+                }
+                if((height < 25 && height > 20) && (accumulator2 < 25500))
+                {
+                    score2++;
+                }
+                accumulator2 = 0;
                 width = window.width;
             }
 
             float score = accumulator/(window.width*window.height);
-            trainingPass(score);
 
             bool detected = false;
             const float low = 1.0f;
@@ -580,10 +604,11 @@ void faceTest(filterType type, const pgm& image)
                 default:
                     exit(-1);
             }
+            trainingPass(detected, score2);
 
             if(detected)
             {
-      //          printf("Face detected\n");
+//                printf("Face detected\n");
             }
 
             delete[] window.image;
@@ -596,7 +621,7 @@ void faceTest(filterType type, const pgm& image)
 
 int32_t main(int32_t argc, char** argv)
 {
-    filterType type = LeftRight;
+    filterType type = UpDown;
 
     if(argc != 2)
     {
