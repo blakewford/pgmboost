@@ -592,6 +592,7 @@ void faceTest(filterType type, const pgm& image, const pgm& filtered)
                     accumulator2 += window.image[i];
                     i++;
                 }
+                //AddHardCodedValueToReport
                 if((height > 85) && (accumulator2 == 25500))
                 {
                     score2++;
@@ -647,11 +648,6 @@ void faceTest(filterType type, const pgm& image, const pgm& filtered)
             delete[] skin.image;
 
             trainingPass(detected, score2, skinPossible);
-
-            if(detected)
-            {
-//                printf("Face detected\n");
-            }
 
             delete[] window.image;
             x+=window.width;
