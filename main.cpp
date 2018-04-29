@@ -517,8 +517,10 @@ void trainingPass(bool detected, float score)
     //Range
     //printf("%.2f\n", score);
     //Accuracy
-    if(detected && score > 5.0f && score < 15.0f)
-        printf("1\n");
+    if(detected && score > 5.0f && score < 30.0f)
+        printf("1+");
+    else
+        printf("0+");
 }
 
 void faceTest(filterType type, const pgm& image)
@@ -617,12 +619,30 @@ void faceTest(filterType type, const pgm& image)
         x=0;
         y+=window.height;
     }
+
+#ifdef CHECK
+     printf("0");
+#endif
 }
+
+#ifdef LR
+filterType type = LeftRight;
+#endif
+#ifdef UD
+filterType type = UpDown;
+#endif
+#ifdef LR3
+filterType type = LeftRight3Bar;
+#endif
+#ifdef UD3
+filterType type = UpDown3Bar;
+#endif
+#ifdef CHECK
+filterType type = Checker;
+#endif
 
 int32_t main(int32_t argc, char** argv)
 {
-    filterType type = UpDown;
-
     if(argc != 2)
     {
         printf("usage: adaboost <image>\n");
