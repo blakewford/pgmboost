@@ -120,6 +120,24 @@ void applyFilter(pgm& image, const pgm& filter)
     delete[] oldImage;
 }
 
+void applyBox(pgm& image, int32_t x, int32_t y)
+{
+    int32_t width = 100;
+    int32_t height = 100;
+
+    while(width--)
+    {
+        setPixel(image, x+width, y, 0);
+        setPixel(image, x+width, y+99, 0);
+    }
+
+    while(height--)
+    {
+        setPixel(image, x, y+height, 0);
+        setPixel(image, x+99, y+height, 0);
+    }
+}
+
 void writeWindowImage(const pgm& image, const char* file)
 {
     std::ofstream stream;
@@ -533,26 +551,7 @@ void convertImage(const char* path)
     system(buffer);
 }
 
-void trainingPass(const pgm& image, bool detected, float score, bool skin)
-{
-    //AddHardCodedValueToReport
-    //Range
-    //printf("%.2f\n", score);
-    //Accuracy
-    if(detected && score > 5.0f && score < 30.0f)
-    {
-        if(skin)
-            printf(image.width <= 100 || image.height <= 100 ? "15+": "3+");
-        else
-            printf(image.width <= 100 || image.height <= 100 ? "5+": "1+");
-    }
-    else
-    {
-        printf("0+");
-    }
-}
-
-void faceTest(filterType type, const pgm& image, const pgm& filtered)
+void faceTest(filterType type, const pgm& image, pgm& original, const pgm& filtered)
 {
     pgm skin;
     pgm window;
@@ -653,7 +652,24 @@ void faceTest(filterType type, const pgm& image, const pgm& filtered)
                     exit(-1);
             }
 
-            trainingPass(image, detected, score2, skinPossible);
+            //AddHardCodedValueToReport
+            if(detected && score > 5.0f && score < 30.0f)
+            {
+                if(skinPossible)
+                {
+                    printf(image.width <= 100 || image.height <= 100 ? "15+": "3+");
+                    applyBox(original, x, y);
+                }
+                else
+                {
+                    printf(image.width <= 100 || image.height <= 100 ? "5+": "1+");
+//                    applyBox(original, x, y);
+                }
+            }
+            else
+            {
+                printf("0+");
+            }
 
             delete[] window.image;
             x+=window.width;
@@ -693,7 +709,7 @@ int32_t main(int32_t argc, char** argv)
 
     convertImage(argv[1]);
 
-    pgm filter, image;
+    pgm filter, image, original;
 
     std::ifstream imageData;
     imageData.open("clip.pgm");
@@ -711,13 +727,21 @@ int32_t main(int32_t argc, char** argv)
     production(type, image, filter);
 #endif
 
+    imageData.open("clip.pgm");
+    readPgm(imageData, original);
+    imageData.close();
+
     pgm filtered;
     std::ifstream filteredData;
     filteredData.open("filtered.pgm");
     readPgm(filteredData, filtered);
     filteredData.close();
 
-    faceTest(type, image, filtered);
+    faceTest(type, image, original, filtered);
+    writeImage(original, "clip.pgm");
+
+    delete[] image.image;
+    delete[] original.image;
 
     if(argc == 3)
         printf("0");
