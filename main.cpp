@@ -208,6 +208,28 @@ void applyWholeImageFilter(const pgm& image, const pgm& filter)
     }
 }
 
+bool detectSkin(const pgm& image)
+{
+    int32_t i = 0;
+    int32_t x = 0;
+    int32_t y = 0;
+    float accumulator = 0;
+    while(y < image.height)
+    {
+        while(x < image.width)
+        {
+            accumulator += image.image[i];
+            i++;
+            x++;
+        }
+        x=0;
+        y++;
+    }
+
+    float average = accumulator/10000; //Window size
+    return (average > 85.0f && average < 115.0f);
+}
+
 void reconstructImage(const pgm& image, const pgm& filter)
 {
     int32_t i=0;
@@ -511,22 +533,35 @@ void convertImage(const char* path)
     system(buffer);
 }
 
-void trainingPass(bool detected, float score)
+void trainingPass(bool detected, float score, bool skin)
 {
     //AddHardCodedValueToReport
     //Range
     //printf("%.2f\n", score);
     //Accuracy
     if(detected && score > 5.0f && score < 30.0f)
-        printf("1+");
+    {
+        if(skin)
+            printf("3+");
+        else
+            printf("1+");
+    }
     else
+    {
         printf("0+");
+    }
 }
 
-void faceTest(filterType type, const pgm& image)
+void faceTest(filterType type, const pgm& image, const pgm& filtered)
 {
+    pgm skin;
     pgm window;
+
     //AddHardCodedValueToReport
+    skin.width = 100;
+    skin.height = 100;
+    skin.max = 255;
+
     window.width = 100;
     window.height = 100;
     window.max = 255;
@@ -534,11 +569,11 @@ void faceTest(filterType type, const pgm& image)
     int32_t x = 0;
     int32_t y = 0;
     std::string name = "sample";
-    while(y < image.height)
+    while(y < filtered.height)
     {
-        while(x < image.width)
+        while(x < filtered.width)
         {
-            getFilterWindow(x, y, image, window, window);
+            getFilterWindow(x, y, filtered, window, window);
             std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
 //            writeWindowImage(window, output.c_str());
 
@@ -606,7 +641,12 @@ void faceTest(filterType type, const pgm& image)
                 default:
                     exit(-1);
             }
-            trainingPass(detected, score2);
+
+            getFilterWindow(x, y, image, skin, skin);
+            bool skinPossible = detectSkin(skin);
+            delete[] skin.image;
+
+            trainingPass(detected, score2, skinPossible);
 
             if(detected)
             {
@@ -675,7 +715,7 @@ int32_t main(int32_t argc, char** argv)
     readPgm(filteredData, filtered);
     filteredData.close();
 
-    faceTest(type, filtered);
+    faceTest(type, image, filtered);
 
     return 0;
 }
