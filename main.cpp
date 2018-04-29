@@ -653,7 +653,7 @@ void faceTest(filterType type, const pgm& image, pgm& original, const pgm& filte
             }
 
             //AddHardCodedValueToReport
-            if(detected && score > 5.0f && score < 30.0f)
+            if(detected && score2 > 5.0f && score2 < 30.0f)
             {
                 if(skinPossible)
                 {
