@@ -533,7 +533,7 @@ void convertImage(const char* path)
     system(buffer);
 }
 
-void trainingPass(bool detected, float score, bool skin)
+void trainingPass(const pgm& image, bool detected, float score, bool skin)
 {
     //AddHardCodedValueToReport
     //Range
@@ -542,9 +542,9 @@ void trainingPass(bool detected, float score, bool skin)
     if(detected && score > 5.0f && score < 30.0f)
     {
         if(skin)
-            printf("3+");
+            printf(image.width <= 100 || image.height <= 100 ? "15+": "3+");
         else
-            printf("1+");
+            printf(image.width <= 100 || image.height <= 100 ? "5+": "1+");
     }
     else
     {
@@ -573,6 +573,16 @@ void faceTest(filterType type, const pgm& image, const pgm& filtered)
     {
         while(x < filtered.width)
         {
+            if(y+window.width > image.width || x+window.width > image.height)
+            {
+                x+=window.width;
+                continue;
+            }
+
+            getFilterWindow(x, y, image, skin, skin);
+            bool skinPossible = detectSkin(skin);
+            delete[] skin.image;
+
             getFilterWindow(x, y, filtered, window, window);
             std::string output = name + std::to_string(x) +"_"+ std::to_string(y) + ".pgm";
 //            writeWindowImage(window, output.c_str());
@@ -643,11 +653,7 @@ void faceTest(filterType type, const pgm& image, const pgm& filtered)
                     exit(-1);
             }
 
-            getFilterWindow(x, y, image, skin, skin);
-            bool skinPossible = detectSkin(skin);
-            delete[] skin.image;
-
-            trainingPass(detected, score2, skinPossible);
+            trainingPass(image, detected, score2, skinPossible);
 
             delete[] window.image;
             x+=window.width;
@@ -679,7 +685,7 @@ filterType type = Checker;
 
 int32_t main(int32_t argc, char** argv)
 {
-    if(argc != 2)
+    if(argc != 2 && argc != 3)
     {
         printf("usage: adaboost <image>\n");
         return -1;
@@ -695,9 +701,9 @@ int32_t main(int32_t argc, char** argv)
     imageData.close();
 
     int32_t width, height;
-    getProductionFilterDimensions(type, width, height);
-    image.width  -= image.width%width;
-    image.height -= image.height%height;
+//    getProductionFilterDimensions(type, width, height);
+    image.width  -= image.width%100;
+    image.height -= image.height%100;
 
 #if 0
     test(image, filter);
@@ -712,6 +718,9 @@ int32_t main(int32_t argc, char** argv)
     filteredData.close();
 
     faceTest(type, image, filtered);
+
+    if(argc == 3)
+        printf("0");
 
     return 0;
 }
